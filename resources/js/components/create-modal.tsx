@@ -1,0 +1,130 @@
+import React from "react";
+import { Form, useForm } from "@inertiajs/react";
+import { Input } from "@/components/ui/input";
+import InputError from "@/components/input-error";
+import toast from "react-hot-toast";
+
+type FieldConfig<T> = {
+    name: keyof T & string | string;
+    label: string;
+    type?: string;
+    component?: React.ComponentType<any>;
+};
+
+type CreateModalProps<T> = {
+    isOpen: boolean;
+    onClose: () => void;
+    action: string;
+    method?: "post" | "put" | "patch" | "delete";
+    emptyData: T;
+    fields: FieldConfig<T>[];
+};
+
+export function CreateModal<T extends Record<string, any>>({
+                                                               isOpen,
+                                                               onClose,
+                                                               action,
+                                                               method = "post",
+                                                               emptyData,
+                                                               fields,
+                                                           }: CreateModalProps<T>) {
+    const { data, setData, reset } =
+        useForm<T>(emptyData);
+
+    if (!isOpen) return null;
+
+    const splitPath = (path: string): string[] => {
+        const keys: string[] = [];
+        let buffer = "";
+        for (const char of path) {
+            if (char === "." || char === "[" || char === "]") {
+                if (buffer) {
+                    keys.push(buffer);
+                    buffer = "";
+                }
+            } else {
+                buffer += char;
+            }
+        }
+        if (buffer) keys.push(buffer);
+        return keys;
+    };
+
+    const getNested = (obj: any, path: string) => {
+        return splitPath(path).reduce((acc, key) => acc?.[key], obj);
+    };
+
+    const setNested = (obj: any, path: string, value: any) => {
+        const keys = splitPath(path);
+        const last = keys.pop()!;
+        const target = keys.reduce((acc, key) => {
+            if (acc[key] === undefined) acc[key] = {};
+            return acc[key];
+        }, obj);
+        target[last] = value;
+    };
+
+    const handleChange = (name: string, value: any) => {
+        setData(name as any, value);
+    };
+
+    return (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-md p-6">
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                    Create Item
+                </h2>
+
+                <Form action={action} method={method} className="space-y-4" onSuccess={() => {toast.success('Created!'); onClose(); }}>
+                    {({ errors }) => (
+                        <>
+                    {fields.map((field) => {
+                        const Component = field.component ?? Input;
+                        return (
+                            <div key={field.name}>
+                                <label
+                                    htmlFor={field.name}
+                                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                                >
+                                    {field.label}
+                                </label>
+                                <Component
+                                    id={field.name}
+                                    name={field.name}
+                                    type={field.type || "text"}
+                                    value={getNested(data, field.name) ?? ""}
+                                    onChange={(e: any) =>
+                                        handleChange(field.name, e.target?.value ?? e)
+                                    }
+                                    className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                                <InputError message={errors[field.name]} />
+                            </div>
+                        );
+                    })}
+
+                    <div className="flex justify-end space-x-2">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                reset();
+                                onClose();
+                            }}
+                            className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700"
+                        >
+                            Create
+                        </button>
+                    </div>
+                        </>
+                    )}
+                </Form>
+            </div>
+        </div>
+    );
+}
