@@ -1,4 +1,3 @@
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -13,8 +12,9 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-react';
+import { DogIcon, LayoutGrid } from 'lucide-react';
 import AppLogo from './app-logo';
+import petController from '@/actions/App/Http/Controllers/PetController';
 
 const mainNavItems: NavItem[] = [
     {
@@ -22,18 +22,20 @@ const mainNavItems: NavItem[] = [
         href: dashboard(),
         icon: LayoutGrid,
     },
-];
-
-const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
+        title: 'Available pets',
+        href: `${petController.index().url}?status=available`,
+        icon: DogIcon,
     },
     {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
+        title: 'Sold pets',
+        href: `${petController.index().url}?status=sold`,
+        icon: DogIcon,
+    },
+    {
+        title: 'Pending pets',
+        href: `${petController.index().url}?status=pending`,
+        icon: DogIcon,
     },
 ];
 
@@ -57,7 +59,6 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
